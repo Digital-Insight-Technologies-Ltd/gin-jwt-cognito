@@ -135,7 +135,7 @@ func (mw *AuthMiddleware) middlewareImpl(c *gin.Context) {
 	}
 
 	if err != nil {
-		log.Printf("JWT token Parser error: %s", err.Error())
+		log.Printf("jwtFromHeader error: %s", err.Error())
 		mw.unauthorized(c, http.StatusUnauthorized, err.Error())
 		return
 	}

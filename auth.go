@@ -219,6 +219,9 @@ func (mw *AuthMiddleware) parse(tokenStr string) (*jwtgo.Token, error) {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 
+		// print out token
+		fmt.Print(token)
+
 		// 5. Get the kid from the JWT token header and retrieve the corresponding JSON Web Key that was stored
 		if kid, ok := token.Header["kid"]; ok {
 			if kidStr, ok := kid.(string); ok {

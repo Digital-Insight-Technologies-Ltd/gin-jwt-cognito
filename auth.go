@@ -7,8 +7,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	jwtgo "github.com/golang-jwt/jwt"
 	"github.com/gin-gonic/gin"
+	jwtgo "github.com/golang-jwt/jwt"
 	"log"
 	"math/big"
 	"net/http"
@@ -30,7 +30,7 @@ const (
 	AuthenticateHeader = "WWW-Authenticate"
 
 	// AuthorizationHeader the auth header that gets passed to all services
-	AuthorizationHeader = "Authentication"
+	AuthorizationHeader = "Authorization"
 
 	// Forward slash character
 	ForwardSlash = "/"

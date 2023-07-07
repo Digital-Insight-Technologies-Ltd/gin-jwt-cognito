@@ -8,7 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	jwtgo "github.com/golang-jwt/jwt"
+	jwtgo "github.com/golang-jwt/jwt/v5"
 	"log"
 	"math/big"
 	"net/http"
@@ -129,6 +129,7 @@ func (mw *AuthMiddleware) middlewareImpl(c *gin.Context) {
 	var err error
 
 	parts := strings.Split(mw.TokenLookup, ":")
+
 	switch parts[0] {
 	case HEADER:
 		tokenStr, err = mw.jwtFromHeader(c, parts[1])
@@ -139,6 +140,8 @@ func (mw *AuthMiddleware) middlewareImpl(c *gin.Context) {
 		mw.unauthorized(c, http.StatusUnauthorized, err.Error())
 		return
 	}
+
+	Info.Printf("tokenStr: %v", tokenStr)
 
 	token, err := mw.parse(tokenStr)
 
@@ -206,10 +209,14 @@ func AuthJWTMiddleware(iss, userPoolID, region string) (*AuthMiddleware, error) 
 		Region:      region,
 		UserPoolID:  userPoolID,
 	}
+
 	return authMiddleware, nil
 }
 
 func (mw *AuthMiddleware) parse(tokenStr string) (*jwtgo.Token, error) {
+
+	// 0. remove "Bearer " from the tokenStr
+	tokenStr = strings.Split(tokenStr, "Bearer ")[1]
 
 	// 1. Decode the token string into JWT format.
 	token, err := jwtgo.Parse(tokenStr, func(token *jwtgo.Token) (interface{}, error) {
@@ -218,9 +225,6 @@ func (mw *AuthMiddleware) parse(tokenStr string) (*jwtgo.Token, error) {
 		if _, ok := token.Method.(*jwtgo.SigningMethodRSA); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-
-		// print out token
-		fmt.Print(token)
 
 		// 5. Get the kid from the JWT token header and retrieve the corresponding JSON Web Key that was stored
 		if kid, ok := token.Header["kid"]; ok {

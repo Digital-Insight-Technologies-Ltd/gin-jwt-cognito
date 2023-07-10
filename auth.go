@@ -18,10 +18,10 @@ import (
 
 var (
 	// AuthHeaderEmptyError thrown when an empty Authorization header is received
-	AuthHeaderEmptyError = errors.New("auth header empty")
+	AuthHeaderEmptyError = errors.New("HTTP authorization header empty")
 
 	// InvalidAuthHeaderError thrown when an invalid Authorization header is received
-	InvalidAuthHeaderError = errors.New("invalid auth header")
+	InvalidAuthHeaderError = errors.New("invalid HTTP authorization header")
 )
 
 const (

@@ -92,8 +92,8 @@ type JWKKey struct {
 
 // AuthError auth error response
 type AuthError struct {
-	Message string `json:"message"`
-	Code    int    `json:"code"`
+	Code    int `json:"code"`
+	Message any `json:"message"`
 }
 
 // MiddlewareInit initialize jwt configs.

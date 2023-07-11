@@ -350,10 +350,11 @@ func validateClientId(claims jwtgo.MapClaims, allowedClientIds []string) error {
 					return nil
 				}
 			}
+			return fmt.Errorf("this clientid %v is not allowed", clientId)
 		}
 		return errors.New("cannot parse token clientid")
 	}
-	return errors.New("token clientid is not allowed")
+	return errors.New("token clientid part is not found")
 }
 
 func convertKey(rawE, rawN string) *rsa.PublicKey {

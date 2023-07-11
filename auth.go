@@ -342,8 +342,10 @@ func validateExpired(claims jwtgo.MapClaims) error {
 func validateClientId(claims jwtgo.MapClaims, allowedClientIds []string) error {
 	if tokenClientId, ok := claims["client_id"]; ok {
 		if clientId, ok := tokenClientId.(string); ok {
+			fmt.Printf("clientId: %v\n", clientId)
 			// check if present clientId is in the allowed list
 			for _, v := range allowedClientIds {
+				fmt.Printf("v in allowedClientIds: %v\n", v)
 				if v == clientId {
 					return nil
 				}

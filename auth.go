@@ -7,13 +7,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	jwtgo "github.com/golang-jwt/jwt/v5"
 	"log"
 	"math/big"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	jwtgo "github.com/golang-jwt/jwt/v5"
 )
 
 var (
@@ -144,7 +145,7 @@ func (mw *AuthMiddleware) middlewareImpl(c *gin.Context) {
 		return
 	}
 
-	Info.Printf("tokenStr: %v", tokenStr)
+	// Info.Printf("tokenStr: %v", tokenStr)
 
 	token, err := mw.parse(tokenStr)
 
@@ -328,8 +329,8 @@ func validateExpired(claims jwtgo.MapClaims) error {
 	if tokenExp, ok := claims["exp"]; ok {
 		if exp, ok := tokenExp.(float64); ok {
 			now := time.Now().Unix()
-			fmt.Printf("current unixtime : %v\n", now)
-			fmt.Printf("expire unixtime  : %v\n", int64(exp))
+			// Info.Printf("current unixtime : %v\n", now)
+			// Info.Printf("expire unixtime  : %v\n", int64(exp))
 			if int64(exp) > now {
 				return nil
 			}
@@ -342,10 +343,10 @@ func validateExpired(claims jwtgo.MapClaims) error {
 func validateClientId(claims jwtgo.MapClaims, allowedClientIds []string) error {
 	if tokenClientId, ok := claims["client_id"]; ok {
 		if clientId, ok := tokenClientId.(string); ok {
-			fmt.Printf("clientId: %v\n", clientId)
+			Info.Printf("clientId: %v\n", clientId)
 			// check if present clientId is in the allowed list
 			for _, v := range allowedClientIds {
-				// fmt.Printf("v in allowedClientIds: %v\n", v)
+				// Info.Printf("v in allowedClientIds: %v\n", v)
 				if v == clientId {
 					return nil
 				}

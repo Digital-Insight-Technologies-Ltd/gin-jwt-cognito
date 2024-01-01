@@ -1,10 +1,10 @@
-module github.com/Chenjun-Shen/gin-jwt-cognito
+module github.com/Digital-Insight-Technologies-Ltd/gin-jwt-cognito
 
 go 1.20
 
 require (
 	github.com/gin-gonic/gin v1.9.1
-	github.com/golang-jwt/jwt/v5 v5.0.0
+	github.com/golang-jwt/jwt/v5 v5.2.0
 	github.com/stretchr/testify v1.8.4
 )
 

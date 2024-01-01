@@ -3,7 +3,6 @@ module github.com/Digital-Insight-Technologies-Ltd/gin-jwt-cognito
 go 1.20
 
 require (
-	github.com/Chenjun-Shen/gin-jwt-cognito v0.0.0-20230814120207-bfac2f36be4f
 	github.com/gin-gonic/gin v1.9.1
 	github.com/golang-jwt/jwt/v5 v5.2.0
 	github.com/sirupsen/logrus v1.9.3

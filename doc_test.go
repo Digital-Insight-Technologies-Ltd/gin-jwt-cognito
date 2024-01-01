@@ -1,7 +1,7 @@
 package jwt_test
 
 import (
-	jwt "github.com/Chenjun-Shen/gin-jwt-cognito"
+	jwt "github.com/Digital-Insight-Technologies-Ltd/gin-jwt-cognito"
 	"github.com/gin-gonic/gin"
 )
 

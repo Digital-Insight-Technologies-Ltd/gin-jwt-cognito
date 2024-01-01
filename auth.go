@@ -250,7 +250,7 @@ func (mw *AuthMiddleware) parse(tokenStr string) (*jwtgo.Token, error) {
 	}
 	issStr := iss.(string)
 	if strings.Contains(issStr, "cognito-idp") {
-		err = validateAWSJwtClaims(claims, mw.Region, mw.UserPoolID, mw.AllowedClientIds)
+		err = validateAWSJwtClaims(claims, mw.Region, mw.UserPoolID)
 		if err != nil {
 			return token, err
 		}
@@ -263,7 +263,7 @@ func (mw *AuthMiddleware) parse(tokenStr string) (*jwtgo.Token, error) {
 }
 
 // validateAWSJwtClaims validates AWS Cognito User Pool JWT
-func validateAWSJwtClaims(claims jwtgo.MapClaims, region, userPoolID string, allowedClientIds []string) error {
+func validateAWSJwtClaims(claims jwtgo.MapClaims, region, userPoolID string) error {
 	var err error
 	// 3. Check the iss claim. It should match your user pool.
 	issShouldBe := fmt.Sprintf("https://cognito-idp.%v.amazonaws.com/%v", region, userPoolID)
@@ -296,12 +296,6 @@ func validateAWSJwtClaims(claims jwtgo.MapClaims, region, userPoolID string, all
 		return err
 	}
 
-	// 8. Check client id must be in the allowed list
-	err = validateClientId(claims, allowedClientIds)
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -329,21 +323,6 @@ func validateExpired(claims jwtgo.MapClaims) error {
 		return errors.New("cannot parse token exp")
 	}
 	return errors.New("token is expired")
-}
-
-func validateClientId(claims jwtgo.MapClaims, allowedClientIds []string) error {
-	if tokenClientId, ok := claims["client_id"]; ok {
-		if clientId, ok := tokenClientId.(string); ok {
-			for _, v := range allowedClientIds {
-				if v == clientId {
-					return nil
-				}
-			}
-			return fmt.Errorf("this clientid %v is not allowed", clientId)
-		}
-		return errors.New("cannot parse token clientID")
-	}
-	return errors.New("token clientID part is not found")
 }
 
 func convertKey(rawE, rawN string) *rsa.PublicKey {

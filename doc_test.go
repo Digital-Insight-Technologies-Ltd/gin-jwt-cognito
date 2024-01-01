@@ -26,7 +26,10 @@ func ExampleAuthMiddleware() {
 		// some implementation
 	})
 
-	// By default it serves on :8080 unless a
+	// By default, it serves on :8080 unless a
 	// PORT environment variable was defined.
-	router.Run()
+	err = router.Run()
+	if err != nil {
+		return
+	}
 }

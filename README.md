@@ -18,7 +18,7 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
-    "github.com/akhettar/gin-jwt-cognito"
+    "github.com/Digital-Insight-Technologies-Ltd/gin-jwt-cognito"
 )
 
 func main() {

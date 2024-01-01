@@ -11,7 +11,6 @@ import (
 	jwtgo "github.com/golang-jwt/jwt/v5"
 	"github.com/sirupsen/logrus"
 	"io"
-	"log"
 	"math/big"
 	"net/http"
 	"strings"
@@ -132,7 +131,7 @@ func (mw *AuthMiddleware) middlewareImpl(c *gin.Context) {
 	}
 
 	if err != nil {
-		log.Printf("jwtFromHeader error: %s", err.Error())
+		logrus.Errorf("Unable to authenticate: %v", err.Error())
 		mw.unauthorized(c, http.StatusUnauthorized, err.Error())
 		return
 	}
@@ -142,7 +141,7 @@ func (mw *AuthMiddleware) middlewareImpl(c *gin.Context) {
 	token, err := mw.parse(tokenStr)
 
 	if err != nil {
-		log.Printf("JWT token Parser error: %s", err.Error())
+		logrus.Errorf("JWT token Parser error: %s", err.Error())
 		mw.unauthorized(c, http.StatusUnauthorized, err.Error())
 		return
 	}

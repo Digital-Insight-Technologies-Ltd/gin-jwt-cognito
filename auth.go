@@ -7,23 +7,18 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/gin-gonic/gin"
+	jwtgo "github.com/golang-jwt/jwt/v5"
+	"github.com/sirupsen/logrus"
+	"io"
 	"log"
 	"math/big"
 	"net/http"
 	"strings"
 	"time"
-
-	"github.com/gin-gonic/gin"
-	jwtgo "github.com/golang-jwt/jwt/v5"
 )
 
-var (
-	// AuthHeaderEmptyError thrown when an empty Authorization header is received
-	AuthHeaderEmptyError = errors.New("HTTP authorization header empty")
-
-	// InvalidAuthHeaderError thrown when an invalid Authorization header is received
-	InvalidAuthHeaderError = errors.New("invalid HTTP authorization header")
-)
+var AuthHeaderEmptyError = errors.New("HTTP authorization header empty")
 
 const (
 
@@ -32,9 +27,6 @@ const (
 
 	// AuthorizationHeader the auth header that gets passed to all services
 	AuthorizationHeader = "Authorization"
-
-	// Forward slash character
-	ForwardSlash = "/"
 
 	// HEADER used by the JWT middle ware
 	HEADER = "header"
@@ -190,6 +182,8 @@ func (mw *AuthMiddleware) MiddlewareFunc() gin.HandlerFunc {
 }
 
 // AuthJWTMiddleware create an instance of the middle ware function
+//
+//goland:noinspection GoUnusedExportedFunction
 func AuthJWTMiddleware(iss, userPoolID, region string, allowedClientIds []string) (*AuthMiddleware, error) {
 
 	// Download the public json web key for the given user pool ID at the start of the plugin
@@ -251,7 +245,7 @@ func (mw *AuthMiddleware) parse(tokenStr string) (*jwtgo.Token, error) {
 
 	claims := token.Claims.(jwtgo.MapClaims)
 
-	iss, ok := claims["iss"]
+	iss, ok := claims[IssuerFieldName]
 	if !ok {
 		return token, fmt.Errorf("token does not contain issuer")
 	}
@@ -273,10 +267,10 @@ func (mw *AuthMiddleware) parse(tokenStr string) (*jwtgo.Token, error) {
 func validateAWSJwtClaims(claims jwtgo.MapClaims, region, userPoolID string, allowedClientIds []string) error {
 	var err error
 	// 3. Check the iss claim. It should match your user pool.
-	issShoudBe := fmt.Sprintf("https://cognito-idp.%v.amazonaws.com/%v", region, userPoolID)
-	err = validateClaimItem("iss", []string{issShoudBe}, claims)
+	issShouldBe := fmt.Sprintf("https://cognito-idp.%v.amazonaws.com/%v", region, userPoolID)
+	err = validateClaimItem(IssuerFieldName, []string{issShouldBe}, claims)
 	if err != nil {
-		Error.Printf("Failed to validate the jwt token claims %v", err)
+		logrus.Errorf("Failed to validate the jwt token claims %v", err)
 		return err
 	}
 
@@ -315,8 +309,8 @@ func validateAWSJwtClaims(claims jwtgo.MapClaims, region, userPoolID string, all
 func validateClaimItem(key string, keyShouldBe []string, claims jwtgo.MapClaims) error {
 	if val, ok := claims[key]; ok {
 		if valStr, ok := val.(string); ok {
-			for _, shouldbe := range keyShouldBe {
-				if valStr == shouldbe {
+			for _, shouldBe := range keyShouldBe {
+				if valStr == shouldBe {
 					return nil
 				}
 			}
@@ -329,8 +323,6 @@ func validateExpired(claims jwtgo.MapClaims) error {
 	if tokenExp, ok := claims["exp"]; ok {
 		if exp, ok := tokenExp.(float64); ok {
 			now := time.Now().Unix()
-			// Info.Printf("current unixtime : %v\n", now)
-			// Info.Printf("expire unixtime  : %v\n", int64(exp))
 			if int64(exp) > now {
 				return nil
 			}
@@ -343,19 +335,16 @@ func validateExpired(claims jwtgo.MapClaims) error {
 func validateClientId(claims jwtgo.MapClaims, allowedClientIds []string) error {
 	if tokenClientId, ok := claims["client_id"]; ok {
 		if clientId, ok := tokenClientId.(string); ok {
-			// Info.Printf("clientId: %v\n", clientId)
-			// check if present clientId is in the allowed list
 			for _, v := range allowedClientIds {
-				// Info.Printf("v in allowedClientIds: %v\n", v)
 				if v == clientId {
 					return nil
 				}
 			}
 			return fmt.Errorf("this clientid %v is not allowed", clientId)
 		}
-		return errors.New("cannot parse token clientid")
+		return errors.New("cannot parse token clientID")
 	}
-	return errors.New("token clientid part is not found")
+	return errors.New("token clientID part is not found")
 }
 
 func convertKey(rawE, rawN string) *rsa.PublicKey {
@@ -364,9 +353,9 @@ func convertKey(rawE, rawN string) *rsa.PublicKey {
 		panic(err)
 	}
 	if len(decodedE) < 4 {
-		ndata := make([]byte, 4)
-		copy(ndata[4-len(decodedE):], decodedE)
-		decodedE = ndata
+		nData := make([]byte, 4)
+		copy(nData[4-len(decodedE):], decodedE)
+		decodedE = nData
 	}
 	pubKey := &rsa.PublicKey{
 		N: &big.Int{},
@@ -382,7 +371,7 @@ func convertKey(rawE, rawN string) *rsa.PublicKey {
 
 // Download the json web public key for the given user pool id
 func getJWK(jwkURL string) (map[string]JWKKey, error) {
-	Info.Printf("Downloading the jwk from the given url %s", jwkURL)
+	logrus.Infof("Downloading the jwk from the given url %s", jwkURL)
 	jwk := &JWK{}
 
 	var myClient = &http.Client{Timeout: 10 * time.Second}
@@ -390,12 +379,14 @@ func getJWK(jwkURL string) (map[string]JWKKey, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer r.Body.Close()
+	defer func(Body io.ReadCloser) {
+		_ = Body.Close()
+	}(r.Body)
 	if err := json.NewDecoder(r.Body).Decode(jwk); err != nil {
 		return nil, err
 	}
 
-	jwkMap := make(map[string]JWKKey, 0)
+	jwkMap := make(map[string]JWKKey)
 	for _, jwk := range jwk.Keys {
 		jwkMap[jwk.Kid] = jwk
 	}

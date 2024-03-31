@@ -18,6 +18,7 @@ import (
 )
 
 var AuthHeaderEmptyError = errors.New("HTTP authorization header empty")
+var AuthQueryEmptyError = errors.New("HTTP authorization query empty")
 
 const (
 
@@ -26,9 +27,11 @@ const (
 
 	// AuthorizationHeader the auth header that gets passed to all services
 	AuthorizationHeader = "Authorization"
+	AuthorizationQuery  = "Authorization"
 
 	// HEADER used by the JWT middle ware
 	HEADER = "header"
+	QUERY  = "query"
 
 	// IssuerFieldName the issuer field name
 	IssuerFieldName = "iss"
@@ -128,6 +131,9 @@ func (mw *AuthMiddleware) middlewareImpl(c *gin.Context) {
 	switch parts[0] {
 	case HEADER:
 		tokenStr, err = mw.jwtFromHeader(c, parts[1])
+
+	case QUERY:
+		tokenStr, err = mw.jwtFromQuery(c, parts[1])
 	}
 
 	if err != nil {
@@ -157,6 +163,15 @@ func (mw *AuthMiddleware) jwtFromHeader(c *gin.Context, key string) (string, err
 		return "", AuthHeaderEmptyError
 	}
 	return authHeader, nil
+}
+
+func (mw *AuthMiddleware) jwtFromQuery(c *gin.Context, key string) (string, error) {
+	authQuery := c.Request.URL.Query().Get(key)
+
+	if authQuery == "" {
+		return "", AuthQueryEmptyError
+	}
+	return authQuery, nil
 }
 
 func (mw *AuthMiddleware) unauthorized(c *gin.Context, code int, message string) {

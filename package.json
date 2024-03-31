@@ -1,0 +1,77 @@
+{
+  "name": "gin-jwt-cognito",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "prepare": "husky install"
+  },
+  "devDependencies": {
+    "@digitalroute/cz-conventional-changelog-for-jira": "^8.0.1",
+    "@semantic-release/git": "^10.0.1",
+    "commitizen": "^4.3.0",
+    "husky": "^8.0.3",
+    "semantic-release": "^23.0.0"
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/@digitalroute/cz-conventional-changelog-for-jira"
+    }
+  },
+  "release": {
+    "plugins": [
+      "@semantic-release/commit-analyzer",
+      "@semantic-release/release-notes-generator",
+      "@semantic-release/npm",
+      "@semantic-release/github",
+      "@semantic-release/git",
+      [
+        "@jamesbuddrige/semantic-release-jira",
+        {
+          "projectId": "COR",
+          "releaseNameTemplate": "Gin JWT Cognito v${version}",
+          "jiraHost": "https://digital-insight.atlassian.net",
+          "ticketPrefixes": [
+            "COR"
+          ],
+          "released": true,
+          "setReleaseDate": true,
+          "onlyDefaultChannel": true
+        }
+      ],
+      [
+        "@saithodev/semantic-release-backmerge",
+        {
+          "backmergeBranches": [
+            {
+              "from": "prod",
+              "to": "main"
+            },
+            {
+              "from": "prod",
+              "to": "candidate"
+            },
+            {
+              "from": "candidate",
+              "to": "main"
+            }
+          ]
+        }
+      ]
+    ],
+    "branches": [
+      {
+        "name": "main",
+        "channel": "prerelease",
+        "prerelease": "prerelease"
+      },
+      {
+        "name": "candidate",
+        "channel": "rc",
+        "prerelease": "rc"
+      },
+      {
+        "name": "prod"
+      }
+    ]
+  }
+}

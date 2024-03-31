@@ -29,13 +29,6 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
 
-      - name: Build
-        run: mkdir -p build && go build -ldflags="-w -s" -o build -v ./...
-        env:
-          GOOS: linux
-          GOARCH: amd64
-          CGO_ENABLED: 0
-
       - name: Test
         run: go test -v ./...
 
@@ -50,10 +43,3 @@ jobs:
             @jamesbuddrige/semantic-release-jira
             @saithodev/semantic-release-backmerge
             @semantic-release/git
-
-      - name: Upload Artifact to GitHub Release
-        uses: softprops/action-gh-release@v2
-        if: steps.semantic.outputs.new_release_published == 'true'
-        with:
-          files: build/*
-          tag_name: ${{ steps.semantic.outputs.new_release_git_tag }}

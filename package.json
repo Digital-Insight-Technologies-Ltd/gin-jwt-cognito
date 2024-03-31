@@ -1,7 +1,7 @@
 {
   "name": "gin-jwt-cognito",
   "private": true,
-  "version": "1.1.0-prerelease.1",
+  "version": "1.1.0",
   "scripts": {
     "prepare": "husky install"
   },

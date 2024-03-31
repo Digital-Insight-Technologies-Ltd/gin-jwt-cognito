@@ -198,7 +198,7 @@ func (mw *AuthMiddleware) MiddlewareFunc() gin.HandlerFunc {
 // AuthJWTMiddleware create an instance of the middle ware function
 //
 //goland:noinspection GoUnusedExportedFunction
-func AuthJWTMiddleware(iss, userPoolID, region string, allowedClientIds []string) (*AuthMiddleware, error) {
+func AuthJWTMiddleware(iss, userPoolID, region string, allowedClientIds []string, tokenLookup string) (*AuthMiddleware, error) {
 
 	// Download the public json web key for the given user pool ID at the start of the plugin
 	jwk, err := getJWK(fmt.Sprintf("https://cognito-idp.%v.amazonaws.com/%v/.well-known/jwks.json", region, userPoolID))
@@ -214,7 +214,7 @@ func AuthJWTMiddleware(iss, userPoolID, region string, allowedClientIds []string
 		},
 
 		// Token header
-		TokenLookup:      "header:" + AuthorizationHeader,
+		TokenLookup:      tokenLookup,
 		TimeFunc:         time.Now,
 		JWK:              jwk,
 		Iss:              iss,

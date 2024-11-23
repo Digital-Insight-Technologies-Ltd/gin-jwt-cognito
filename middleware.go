@@ -17,15 +17,7 @@ const UserClaimsKey = "userClaims"
 // AWS Cognito.
 func CognitoClaimsMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		tok, ok := c.GetQuery("Authorization")
-
-		if !ok {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Missing Authorization header"})
-			return
-		}
-
-		claims, err := parseClaims(tok[7:])
-
+		claims, err := parseClaims(c.GetHeader("Authorization")[7:])
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid user claims (OIDC: stage 1)"})
 			return

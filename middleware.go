@@ -17,13 +17,16 @@ const UserClaimsKey = "userClaims"
 // CognitoClaimsMiddleware is a middleware for Gin that extracts user claims from
 // AWS Cognito.
 func CognitoClaimsMiddleware() gin.HandlerFunc {
+	// parser
+	jwtParser := new(jwt.Parser)
+
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if len(authHeader) < 8 || authHeader[:7] != "Bearer " {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Missing or invalid Authorization header"})
 			return
 		}
-		claims, err := parseClaims(authHeader[7:])
+		claims, err := parseClaims(jwtParser, authHeader[7:])
 
 		if err != nil {
 			logrus.WithError(err).Error("Error parsing claims")
@@ -47,8 +50,8 @@ func CognitoClaimsMiddleware() gin.HandlerFunc {
 	}
 }
 
-func parseClaims(claimsHeader string) (jwt.MapClaims, error) {
-	tok, _, err := new(jwt.Parser).ParseUnverified(claimsHeader, jwt.MapClaims{})
+func parseClaims(jwtParser *jwt.Parser, claimsHeader string) (jwt.MapClaims, error) {
+	tok, _, err := jwtParser.ParseUnverified(claimsHeader, jwt.MapClaims{})
 	if err != nil {
 		logrus.WithError(err).Error("Error parsing claims")
 		return nil, err

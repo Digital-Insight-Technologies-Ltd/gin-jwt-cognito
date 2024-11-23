@@ -2,6 +2,7 @@ package jwt
 
 import (
 	"github.com/Digital-Insight-Technologies-Ltd/gin-jwt-cognito/models"
+	"github.com/sirupsen/logrus"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -17,8 +18,15 @@ const UserClaimsKey = "userClaims"
 // AWS Cognito.
 func CognitoClaimsMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		claims, err := parseClaims(c.GetHeader("Authorization")[7:])
+		authHeader := c.GetHeader("Authorization")
+		if len(authHeader) < 8 || authHeader[:7] != "Bearer " {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Missing or invalid Authorization header"})
+			return
+		}
+		claims, err := parseClaims(authHeader[7:])
+
 		if err != nil {
+			logrus.WithError(err).Error("Error parsing claims")
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid user claims (OIDC: stage 1)"})
 			return
 		}
@@ -26,6 +34,7 @@ func CognitoClaimsMiddleware() gin.HandlerFunc {
 		userCtx, err := constructUserContext(claims)
 
 		if err != nil {
+			logrus.WithError(err).Error("Error constructing user context")
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid user claims (OIDC: stage 2)"})
 			return
 		}
@@ -41,12 +50,13 @@ func CognitoClaimsMiddleware() gin.HandlerFunc {
 func parseClaims(claimsHeader string) (jwt.MapClaims, error) {
 	tok, _, err := new(jwt.Parser).ParseUnverified(claimsHeader, jwt.MapClaims{})
 	if err != nil {
+		logrus.WithError(err).Error("Error parsing claims")
 		return nil, err
 	}
 
 	claims, ok := tok.Claims.(jwt.MapClaims)
 	if !ok {
-		return nil, err
+		return nil, errors.New("invalid claims type")
 	}
 
 	return claims, nil
@@ -63,6 +73,7 @@ func constructUserContext(claims jwt.MapClaims) (models.UserContext, error) {
 	}
 	userID, err := uuid.Parse(userIDString)
 	if err != nil {
+		logrus.WithError(err).Error("Error parsing claims")
 		return models.UserContext{}, errors.New("Invalid user claims (failed to parse UserID UUID)")
 	}
 	tenantIDString, ok := claims["custom:tenantId"].(string)
@@ -71,6 +82,7 @@ func constructUserContext(claims jwt.MapClaims) (models.UserContext, error) {
 	}
 	tenantID, err := uuid.Parse(tenantIDString)
 	if err != nil {
+		logrus.WithError(err).Error("Error parsing claims")
 		return models.UserContext{}, errors.New("Invalid user claims (failed to parse TenantID UUID)")
 	}
 	organisationIDString, ok := claims["custom:organisationId"].(string)
@@ -79,6 +91,7 @@ func constructUserContext(claims jwt.MapClaims) (models.UserContext, error) {
 	}
 	organisationID, err := uuid.Parse(organisationIDString)
 	if err != nil {
+		logrus.WithError(err).Error("Error parsing claims")
 		return models.UserContext{}, errors.New("Invalid user claims (failed to parse OrganisationID UUID)")
 	}
 

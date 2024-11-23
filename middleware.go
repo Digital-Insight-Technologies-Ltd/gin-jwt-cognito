@@ -1,13 +1,13 @@
 package jwt
 
 import (
+	"errors"
 	"github.com/Digital-Insight-Technologies-Ltd/gin-jwt-cognito/models"
 	"github.com/sirupsen/logrus"
 	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-errors/errors"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 )
@@ -17,10 +17,7 @@ const UserClaimsKey = "userClaims"
 
 // CognitoClaimsMiddleware is a middleware for Gin that extracts user claims from
 // AWS Cognito.
-func CognitoClaimsMiddleware() gin.HandlerFunc {
-	// parser
-	jwtParser := new(jwt.Parser)
-
+func CognitoClaimsMiddleware(jwtParser *jwt.Parser) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if !strings.HasPrefix(authHeader, "Bearer ") {

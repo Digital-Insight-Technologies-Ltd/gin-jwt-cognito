@@ -4,6 +4,7 @@ import (
 	"github.com/Digital-Insight-Technologies-Ltd/gin-jwt-cognito/models"
 	"github.com/sirupsen/logrus"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-errors/errors"
@@ -22,14 +23,14 @@ func CognitoClaimsMiddleware() gin.HandlerFunc {
 
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
-		if len(authHeader) < 8 || authHeader[:7] != "Bearer " {
+		if !strings.HasPrefix(authHeader, "Bearer ") {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Missing or invalid Authorization header"})
 			return
 		}
 		claims, err := parseClaims(jwtParser, authHeader[7:])
 
 		if err != nil {
-			logrus.WithError(err).Error("Error parsing claims")
+			logrus.WithError(err).Error("Error parsing claims (OIDC: stage 1)")
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid user claims (OIDC: stage 1)"})
 			return
 		}
@@ -37,7 +38,7 @@ func CognitoClaimsMiddleware() gin.HandlerFunc {
 		userCtx, err := constructUserContext(claims)
 
 		if err != nil {
-			logrus.WithError(err).Error("Error constructing user context")
+			logrus.WithError(err).Error("Error constructing user context (OIDC: stage 2)")
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid user claims (OIDC: stage 2)"})
 			return
 		}
@@ -65,37 +66,38 @@ func parseClaims(jwtParser *jwt.Parser, claimsHeader string) (jwt.MapClaims, err
 	return claims, nil
 }
 
+func parseUUID(claims jwt.MapClaims, key string) (uuid.UUID, error) {
+	idString, ok := claims[key].(string)
+	if !ok {
+		return uuid.UUID{}, errors.New("Invalid " + key + " format")
+	}
+	id, err := uuid.Parse(idString)
+	if err != nil {
+		logrus.WithError(err).Errorf("Error parsing claims, Invalid user claims (failed to parse %v UUID)", key)
+		return uuid.UUID{}, errors.New("Invalid user claims (failed to parse " + key + " UUID)")
+	}
+	return id, nil
+}
+
 func constructUserContext(claims jwt.MapClaims) (models.UserContext, error) {
 	email, ok := claims["email"].(string)
 	if !ok {
 		return models.UserContext{}, errors.New("Invalid email format")
 	}
-	userIDString, ok := claims["sub"].(string)
-	if !ok {
-		return models.UserContext{}, errors.New("Invalid UserID format")
-	}
-	userID, err := uuid.Parse(userIDString)
+
+	userID, err := parseUUID(claims, "sub")
 	if err != nil {
-		logrus.WithError(err).Error("Error parsing claims")
-		return models.UserContext{}, errors.New("Invalid user claims (failed to parse UserID UUID)")
+		return models.UserContext{}, err
 	}
-	tenantIDString, ok := claims["custom:tenantId"].(string)
-	if !ok {
-		return models.UserContext{}, errors.New("Invalid TenantID format")
-	}
-	tenantID, err := uuid.Parse(tenantIDString)
+
+	tenantID, err := parseUUID(claims, "custom:tenantId")
 	if err != nil {
-		logrus.WithError(err).Error("Error parsing claims")
-		return models.UserContext{}, errors.New("Invalid user claims (failed to parse TenantID UUID)")
+		return models.UserContext{}, err
 	}
-	organisationIDString, ok := claims["custom:organisationId"].(string)
-	if !ok {
-		return models.UserContext{}, errors.New("Invalid OrganisationID format")
-	}
-	organisationID, err := uuid.Parse(organisationIDString)
+
+	organisationID, err := parseUUID(claims, "custom:organisationId")
 	if err != nil {
-		logrus.WithError(err).Error("Error parsing claims")
-		return models.UserContext{}, errors.New("Invalid user claims (failed to parse OrganisationID UUID)")
+		return models.UserContext{}, err
 	}
 
 	// Decode the claims

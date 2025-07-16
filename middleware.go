@@ -2,10 +2,11 @@ package jwt
 
 import (
 	"errors"
-	"github.com/Digital-Insight-Technologies-Ltd/gin-jwt-cognito/models"
-	"github.com/sirupsen/logrus"
 	"net/http"
 	"strings"
+
+	"github.com/Digital-Insight-Technologies-Ltd/gin-jwt-cognito/models"
+	"github.com/sirupsen/logrus"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -79,7 +80,7 @@ func parseUUID(claims jwt.MapClaims, key string) (uuid.UUID, error) {
 func constructUserContext(claims jwt.MapClaims) (models.UserContext, error) {
 	email, ok := claims["email"].(string)
 	if !ok {
-		return models.UserContext{}, errors.New("Invalid email format")
+		return models.UserContext{}, errors.New("invalid email format")
 	}
 
 	userID, err := parseUUID(claims, "sub")
@@ -97,11 +98,17 @@ func constructUserContext(claims jwt.MapClaims) (models.UserContext, error) {
 		return models.UserContext{}, err
 	}
 
+	userType, ok := claims["userType"].(string)
+	if !ok {
+		userType = "DEFAULT"
+	}
+
 	// Decode the claims
 	return models.UserContext{
 		UserID:         userID,
 		TenantID:       tenantID,
 		OrganisationID: organisationID,
 		Email:          email,
+		UserType:       userType,
 	}, nil
 }
